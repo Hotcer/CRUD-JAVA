@@ -1,10 +1,7 @@
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class Estudiante extends JFrame {
     private JPanel panel;
@@ -19,22 +16,64 @@ public class Estudiante extends JFrame {
     private JList lista;
     Connection con;
     PreparedStatement ps;
+    Statement st;
+    ResultSet r;
+    DefaultListModel mod = new DefaultListModel();
 
     public Estudiante() {
         consultarBt.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                conectar();
+                try {
+                    listar();
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+        ingresarBt.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    insertar();
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
     }
 
-    public void listar() {
+    public void listar() throws SQLException {
         conectar();
+        lista.setModel(mod);
+        st = con.createStatement();
+        r = st.executeQuery("SELECT id,nombre,apellido FROM estudiantes");
+        mod.removeAllElements();
+        mod.addElement(r.getString(1) + " " + r.getString(2) + " " + r.getString(3));
     }
 
-    public void insertar() {
+    public void insertar() throws SQLException {
+
         conectar();
+        ps = con.prepareStatement("INSERT INTO estudiantes VALUES (?,?,?,?,?,?)");
+        ps.setInt(1, Integer.parseInt(idText.getText()));
+        ps.setString(2, nombreTxt.getText());
+        ps.setString(3, apellidoTxt.getText());
+        ps.setInt(4, Integer.parseInt(edadTxt.getText()));
+        ps.setLong(5, Long.parseLong(celularTxt.getText()));
+        ps.setString(6, direccionTxt.getText());
+        if (ps.executeUpdate() > 0) {
+            lista.setModel(mod);
+            mod.removeAllElements();
+            mod.addElement(" Insercion exitosa ");
+
+            idText.setText("");
+            nombreTxt.setText("");
+            apellidoTxt.setText("");
+            edadTxt.setText("");
+            celularTxt.setText("");
+            direccionTxt.setText("");
+        }
     }
 
     public static void main(String[] args) {
